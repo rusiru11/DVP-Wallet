@@ -8,7 +8,7 @@
     "config": "^1.19.0",
     "cors": "^2.7.1",
     "dvp-common": "^0.5.6",
-    "dvp-dbmodels": "^0.5.4",
+    "dvp-dbmodels": "^0.5.9",
     "enum": "^2.3.0",
     "moment": "^2.15.2",
     "node": "^0.0.0",

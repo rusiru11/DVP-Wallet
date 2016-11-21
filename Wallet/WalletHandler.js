@@ -379,7 +379,72 @@ module.exports.DeductCredit = function (req, res) {
 
 module.exports.DeductCreditFormCustomer = function (req, res) {
 
-    lock(req.params.CustomerId, function (done) {
+    DbConn.Wallet.find({
+        where: [{TenantId: req.user.tenant}, {CompanyId: req.user.company}, {Status: true}]
+    }).then(function (wallet) {
+        if (wallet) {
+            lock(wallet.WalletId, function (done) {
+                console.log("Lock acquired" + req.params.WalletId);
+                // No one else will be able to get a lock on 'myLock' until you call done()  done();
+                var amount = parseFloat(req.body.Amount);
+                var credit = parseFloat(wallet.Credit);
+                if (credit > amount) {
+                    credit = credit - amount;
+                    DbConn.Wallet
+                        .update(
+                        {
+                            Credit: credit
+                        },
+                        {
+                            where: [{WalletId: wallet.WalletId}]
+                        }
+                    ).then(function (cmp) {
+                            var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
+                            logger.info('DeductCreditFormCustomer - Update Wallet - [%s] .', jsonString);
+                            done();
+                            res.end(jsonString);
+                            var data = {
+                                StripeId: undefined,
+                                Description: undefined,
+                                CurrencyISO: undefined,
+                                Credit: credit,
+                                Tag: undefined,
+                                TenantId: req.user.tenant,
+                                CompanyId: req.user.company,
+                                OtherJsonData: {"msg": "DeductCredit", "amount": amount,"invokeBy": req.user.iss},
+                                WalletId: cmp.WalletId
+                            };
+                            addHistory(data);
+                        }).error(function (err) {
+                            var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+                            logger.error('DeductCreditFormCustomer - Fail To Update Wallet. - [%s] .', jsonString);
+                            done();
+                            res.end(jsonString);
+                        });
+                }
+                else {
+                    var jsonString = messageFormatter.FormatMessage(new Error("Insufficient  Credit Balance."), "EXCEPTION", false, undefined);
+                    logger.error('[DeductCreditFormCustomer] - [%s] ', jsonString);
+                    done();
+                    res.end(jsonString);
+                }
+            });
+
+        }
+        else {
+            var jsonString = messageFormatter.FormatMessage(new Error("Invalid Wallet ID"), "EXCEPTION", false, undefined);
+            logger.error('[DeductCreditFormCustomer] - [%s] ', jsonString);
+            res.end(jsonString);
+        }
+
+
+    }).error(function (err) {
+        var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+        logger.error('[DeductCreditFormCustomer] - [%s] ', jsonString);
+        res.end(jsonString);
+    });
+
+    /*lock(req.params.CustomerId, function (done) {
         console.log("Lock acquired" + req.params.WalletId);
         // No one else will be able to get a lock on 'myLock' until you call done()  done();
         DbConn.Wallet.find({
@@ -441,7 +506,7 @@ module.exports.DeductCreditFormCustomer = function (req, res) {
             done();
             res.end(jsonString);
         });
-    });
+    });*/
 
 };
 
@@ -452,7 +517,11 @@ module.exports.CreditBalance = function (req, res) {
     }).then(function (wallet) {
         var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, 0);
         if (wallet) {
-            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, wallet.Credit);
+            var data = {
+                "WalletId":wallet.WalletId,
+                "Credit":wallet.Credit
+            };
+            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, data);
         }
         else {
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
@@ -495,6 +564,10 @@ module.exports.AddNewCard = function (req, res) {
         if (wallet) {
             directPayment.AddNewCard(wallet.StripeId, req.body.token).then(function (customer) {
 
+                var jsonString = messageFormatter.FormatMessage(undefined, "Add new Card Successfully.", true, customer);
+                logger.info('AddNewCard - Update Wallet - [%s] .', jsonString);
+                res.end(jsonString);
+
                 var data = {
                     StripeId: wallet.StripeId,
                     Description: req.body.Description,
@@ -503,7 +576,7 @@ module.exports.AddNewCard = function (req, res) {
                     Tag: undefined,
                     TenantId: req.user.tenant,
                     CompanyId: req.user.company,
-                    OtherJsonData: {"msg": "AddNewCard", "Data": JSON.parse(customer),"invokeBy": req.user.iss},
+                    OtherJsonData: {"msg": "AddNewCard", "Data": customer,"invokeBy": req.user.iss},
                     WalletId: wallet.WalletId
                 };
                 addHistory(data);
@@ -532,32 +605,45 @@ module.exports.RemoveCard = function (req, res) {
         where: [{WalletId: req.params.WalletId}, {Owner: req.user.iss}, {TenantId: req.user.tenant}, {CompanyId: req.user.company}, {Status: true}]
     }).then(function (wallet) {
         if (wallet) {
-            directPayment.DeleteCard(wallet.StripeId, req.params.CardId).then(function (customer) {
-                if (JSON.parse(customer).deleted) {
-                    var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, customer);
-                    logger.info('RemoveCard - Update Wallet - [%s] .', jsonString);
-                    res.end(jsonString);
-                    var data = {
-                        StripeId: wallet.StripeId,
-                        Description: undefined,
-                        CurrencyISO: undefined,
-                        Credit: 0,
-                        Tag: undefined,
-                        TenantId: req.user.tenant,
-                        CompanyId: req.user.company,
-                        OtherJsonData: {"msg": "RemoveCard", "Data": JSON.parse(customer),"invokeBy": req.user.iss},
-                        WalletId: wallet.WalletId
-                    };
-                    addHistory(data);
+            directPayment.ListCards(wallet.StripeId).then(function (cards) {
+                if(cards.data && cards.data.length>1){
+                    directPayment.DeleteCard(wallet.StripeId, req.params.CardId).then(function (customer) {
+                        if (customer.deleted) {
+                            var jsonString = messageFormatter.FormatMessage(undefined, "Card Was Removed Form System.", true, customer.id);
+                            logger.info('RemoveCard - Update Wallet - [%s] .', jsonString);
+                            res.end(jsonString);
+                            var data = {
+                                StripeId: wallet.StripeId,
+                                Description: undefined,
+                                CurrencyISO: undefined,
+                                Credit: 0,
+                                Tag: undefined,
+                                TenantId: req.user.tenant,
+                                CompanyId: req.user.company,
+                                OtherJsonData: {"msg": "RemoveCard", "Data": customer,"invokeBy": req.user.iss},
+                                WalletId: wallet.WalletId
+                            };
+                            addHistory(data);
+                        }
+                        else {
+                            var jsonString = messageFormatter.FormatMessage(undefined, "Fail To Remove Card form Wallet", false, undefined);
+                            logger.error('RemoveCard-DirectPayment - Fail To Remove Card form Wallet. - [%s] .', jsonString);
+                            res.end(jsonString);
+                        }
+                    }, function (err) {
+                        var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+                        logger.error('RemoveCard-DirectPayment - Fail To Remove Card form  Wallet. - [%s] .', jsonString);
+                        res.end(jsonString);
+                    });
                 }
-                else {
-                    var jsonString = messageFormatter.FormatMessage(undefined, "Fail To Remove Card form Wallet", false, undefined);
-                    logger.error('RemoveCard-DirectPayment - Fail To Remove Card form Wallet. - [%s] .', jsonString);
+                else{
+                    var jsonString = messageFormatter.FormatMessage(undefined, "Invalid Card Details Or No Card Added. If  Delete Default Card. Please Contact System Administrator'.", false, undefined);
+                    logger.error('RemoveCard - Fail To Get Card Details.. - [%s] .', jsonString);
                     res.end(jsonString);
                 }
             }, function (err) {
                 var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
-                logger.error('RemoveCard-DirectPayment - Fail To Remove Card form  Wallet. - [%s] .', jsonString);
+                logger.error('RemoveCard - Fail To Get Card Details.. - [%s] .', jsonString);
                 res.end(jsonString);
             });
         }
@@ -618,7 +704,7 @@ module.exports.SetDefaultCard = function (req, res) {
         if (wallet) {
 
             directPayment.SetDefaultCard(wallet.StripeId,req.params.CardId).then(function (cards) {
-                var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cards);
+                var jsonString = messageFormatter.FormatMessage(undefined, "Successfully Set Default card", true, undefined);
                 logger.info('SetDefaultCard - . - [%s] .', jsonString);
                 res.end(jsonString);
 
@@ -630,7 +716,7 @@ module.exports.SetDefaultCard = function (req, res) {
                     Tag: undefined,
                     TenantId: req.user.tenant,
                     CompanyId: req.user.company,
-                    OtherJsonData: {"msg": "SetDefaultCard", "Data": JSON.parse(cards),"invokeBy": req.user.iss},
+                    OtherJsonData: {"msg": "SetDefaultCard", "Data": cards,"invokeBy": req.user.iss},
                     WalletId: wallet.WalletId
                 };
                 addHistory(data);

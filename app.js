@@ -22,7 +22,7 @@ var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
 
 var RestServer = restify.createServer({
-    name: 'ArdsServer',
+    name: 'WalletServer',
     version: '1.0.0'
 });
 
@@ -181,7 +181,7 @@ RestServer.put('/DVP/API/' + version + '/PaymentManager/Wallet/:WalletId/Credit'
     return next();
 });
 
-RestServer.put('/DVP/API/' + version + '/PaymentManager/Customer/:CustomerId/Wallet/Credit', authorization({
+RestServer.put('/DVP/API/' + version + '/PaymentManager/Customer/Wallet/Credit', authorization({
     resource: "ardsresource",
     action: "read"
 }), function (req, res, next) {
