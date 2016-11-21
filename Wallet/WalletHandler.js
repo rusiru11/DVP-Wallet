@@ -562,9 +562,9 @@ module.exports.AddNewCard = function (req, res) {
         where: [{WalletId: req.params.WalletId}, {Owner: req.user.iss}, {TenantId: req.user.tenant}, {CompanyId: req.user.company}, {Status: true}]
     }).then(function (wallet) {
         if (wallet) {
-            directPayment.AddNewCard(wallet.StripeId, req.body.token).then(function (customer) {
+            directPayment.AddNewCard(wallet.StripeId, req.headers['api_key']).then(function (customer) {
 
-                var jsonString = messageFormatter.FormatMessage(undefined, "Add new Card Successfully.", true, customer);
+                var jsonString = messageFormatter.FormatMessage(undefined, "Add new Card Successfully.", true, customer.id);
                 logger.info('AddNewCard - Update Wallet - [%s] .', jsonString);
                 res.end(jsonString);
 
@@ -637,7 +637,7 @@ module.exports.RemoveCard = function (req, res) {
                     });
                 }
                 else{
-                    var jsonString = messageFormatter.FormatMessage(undefined, "Invalid Card Details Or No Card Added. If  Delete Default Card. Please Contact System Administrator'.", false, undefined);
+                    var jsonString = messageFormatter.FormatMessage(undefined, "Invalid Card Details Or No Card Added. if You want to Delete Default Card, Please Contact System Administrator'.", false, undefined);
                     logger.error('RemoveCard - Fail To Get Card Details.. - [%s] .', jsonString);
                     res.end(jsonString);
                 }
