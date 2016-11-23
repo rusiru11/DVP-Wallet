@@ -838,9 +838,14 @@ var addHistory = function (data) {
 
 module.exports.getWalletHistory = function (req, res) {
 
-    DbConn.WalletHistory.find({
+    DbConn.WalletHistory.findAll({
+        where:[{createdAt:
+        {
+            $gte:req.params.StartDate,
+            $lte:req.params.EndDate
+        }}]
     }).then(function (wallet) {
-        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, 0);
+        var jsonString;
         if (wallet) {
 
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, wallet);

@@ -280,7 +280,7 @@ RestServer.post('/DVP/API/' + version + '/webhook', function (req, res, next) {
 
 // ------------------------------------ Wallet history--- --------------------------------//
 
-RestServer.get('/DVP/API/' + version + '/PaymentManager/WalletHistory', authorization({
+RestServer.get('/DVP/API/' + version + '/PaymentManager/WalletHistory/from/:StartDate/to/:EndDate', authorization({
     resource: "ardsresource",
     action: "read"
 }), function (req, res, next) {
