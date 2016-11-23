@@ -260,6 +260,27 @@ RestServer.post('/DVP/API/' + version + '/webhook', function (req, res, next) {
 
 // ---------------------- webhook -------------------------------- //
 
+
+// ------------------------------------ Wallet history--- --------------------------------//
+
+RestServer.get('/DVP/API/' + version + '/PaymentManager/WalletHistory', authorization({
+    resource: "ardsresource",
+    action: "read"
+}), function (req, res, next) {
+    try {
+        logger.info('[getWalletHistory] - [HTTP]  - Request received -  Data - %s ', JSON.stringify(req.body));
+        walletHandler.getWalletHistory(req, res);
+    }
+    catch (ex) {
+        logger.error('[CreditBalance] - [HTTP]  - Exception occurred -  Data - %s ', JSON.stringify(req.body), ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        res.end(jsonString);
+    }
+    return next();
+});
+
+
+
 var port = config.Host.port || 3000;
 RestServer.listen(port, function () {
     console.log('%s listening at %s', RestServer.name, RestServer.url);

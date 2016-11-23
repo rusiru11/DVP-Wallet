@@ -763,3 +763,25 @@ var addHistory = function (data) {
         });
 
 };
+
+
+module.exports.getWalletHistory = function (req, res) {
+
+    DbConn.WalletHistory.find({
+    }).then(function (wallet) {
+        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, 0);
+        if (wallet) {
+
+            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, wallet);
+        }
+        else {
+            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
+        }
+        logger.info('wallet history -  Wallet - [%s] .', jsonString);
+        res.end(jsonString);
+    }).error(function (err) {
+        var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+        logger.error('[wallet history ] - [%s] ', jsonString);
+        res.end(jsonString);
+    });
+};
