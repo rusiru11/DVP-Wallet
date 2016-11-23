@@ -2,9 +2,9 @@
  * Created by Rajinda on 8/24/2015.
  */
 
-var messageFormatter = require('DVP-Common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var request = require('request');
-var logger = require('DVP-Common/LogHandler/CommonLogHandler.js').logger;
+var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
 var format = require('string-format');
 var config = require('config');

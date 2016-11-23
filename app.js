@@ -8,8 +8,8 @@ var config = require('config');
 var port = config.Host.port || 3000;
 var version = config.Host.version;
 
-var logger = require('DVP-Common/LogHandler/CommonLogHandler.js').logger;
-var messageFormatter = require('DVP-Common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var subscriptionsHandler = require('./Stripe/SubscriptionsHandler');
 var walletHandler = require('./Wallet/WalletHandler');
 var webhookHandler = require('./Stripe/WebhookHandler');
@@ -262,22 +262,6 @@ RestServer.put('/DVP/API/' + version + '/PaymentManager/Wallet/:WalletId/Card/:C
     return next();
 });
 
-// ---------------------- webhook -------------------------------- //
-RestServer.post('/DVP/API/' + version + '/webhook', function (req, res, next) {
-    try {
-        logger.info('[Webhook] - [HTTP]  - Request received -  Data - %s ', JSON.stringify(req.body));
-        webhookHandler.Webhook(req, res);
-    }
-    catch (ex) {
-        logger.error('[Webhook] - [HTTP]  - Exception occurred -  Data - %s ', JSON.stringify(req.body), ex);
-        res.send(200);
-    }
-    return next();
-});
-
-// ---------------------- webhook -------------------------------- //
-
-
 // ------------------------------------ Wallet history--- --------------------------------//
 
 RestServer.get('/DVP/API/' + version + '/PaymentManager/WalletHistory/from/:StartDate/to/:EndDate', authorization({
@@ -295,6 +279,24 @@ RestServer.get('/DVP/API/' + version + '/PaymentManager/WalletHistory/from/:Star
     }
     return next();
 });
+
+// ---------------------- webhook -------------------------------- //
+RestServer.post('/DVP/API/' + version + '/webhook', function (req, res, next) {
+    try {
+        logger.info('[Webhook] - [HTTP]  - Request received -  Data - %s ', JSON.stringify(req.body));
+        webhookHandler.Webhook(req, res);
+    }
+    catch (ex) {
+        logger.error('[Webhook] - [HTTP]  - Exception occurred -  Data - %s ', JSON.stringify(req.body), ex);
+        res.send(200);
+    }
+    return next();
+});
+
+// ---------------------- webhook -------------------------------- //
+
+
+
 
 
 
