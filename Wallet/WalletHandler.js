@@ -852,17 +852,18 @@ module.exports.getWalletHistory = function (req, res) {
                     $gte:req.params.StartDate,
                     $lte:req.params.EndDate
                 }},{TenantId: req.user.tenant}, {CompanyId: req.user.company},{WalletId:walletData.WalletId}]
-            }).then(function (wallet) {
+            }).then(function (walletHistory) {
                 var jsonString;
-                if (wallet) {
+                if (walletHistory) {
 
-                    jsonString = messageFormatter.FormatMessage(undefined, "SUCCESS", true, wallet);
+                    jsonString = messageFormatter.FormatMessage(undefined, "SUCCESS", true, walletHistory);
+                    res.end(jsonString);
                 }
                 else {
                     jsonString = messageFormatter.FormatMessage(undefined, "NO HISTORY RECORD FOUND", false, 0);
+                    res.end(jsonString);
                 }
-                logger.info('wallet history -  Wallet - [%s] .', jsonString);
-                res.end(jsonString);
+
             }).error(function (err) {
                 var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
                 logger.error('[wallet history ] - [%s] ', jsonString);
@@ -873,9 +874,10 @@ module.exports.getWalletHistory = function (req, res) {
         else
         {
             jsonString = messageFormatter.FormatMessage(undefined, "NO WALLET RECORD FOUND", false, 0);
+            res.end(jsonString);
         }
-        logger.info('Search wallet data -  Wallet - [%s] .', jsonString);
-        res.end(jsonString);
+
+
     }).error(function (err) {
         var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
         logger.error('[Search wallet data ] - [%s] ', jsonString);
