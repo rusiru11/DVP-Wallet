@@ -7,7 +7,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var DbConn = require('dvp-dbmodels');
 var moment = require('moment');
 var Q = require('q');
-var stripe = require("stripe")("sk_test_xDEOATv0DP02Nff9JzF62CvE");
+var stripe = require("stripe")("sk_test_b2eorWttHOQPWCiq3sLjAmd6");
 
 module.exports.DirectPayment = function (data,res) {
 
@@ -74,12 +74,11 @@ module.exports.DeleteCustomer = function (data) {
     return deferred.promise;
 };
 
-module.exports.CustomerRegister = function (data) {
+module.exports.CustomerRegister = function (token,data) {
     var deferred = Q.defer();
 
     stripe.customers.create({
-        Email: data.Email,
-        source: data.token,
+        source: token,
         description: data.Description
     }, function(err, customer) {
         if(err){

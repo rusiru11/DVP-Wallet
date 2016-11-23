@@ -12,6 +12,7 @@ module.exports = {
         "port": 6389,
         "password":"DuoS123",
         "redisdb":0,
+        "ttl":30000
     },
 
     "Host": {

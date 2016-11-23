@@ -8,7 +8,7 @@ var DbConn = require('dvp-dbmodels');
 var moment = require('moment');
 var Sequelize = require('sequelize');
 var redis = require('redis');
-
+var async = require("async");
 var config = require('config');
 var directPayment = require('../Stripe/DirectPayment');
 
@@ -25,7 +25,7 @@ client.on("connect", function (err) {
     client.select(config.Redis.redisdb, redis.print);
 });
 var lock = require("redis-lock")(client);
-
+var ttl = config.Redis.ttl;
 
 module.exports.CreatePackage = function (req, res) {
 
@@ -76,7 +76,7 @@ module.exports.CreatePackage = function (req, res) {
 
 module.exports.CreateWallet = function (req, res) {
 
-    directPayment.CustomerRegister(req.body).then(function (customer) {
+    directPayment.CustomerRegister(req.headers['api_key'],req.body).then(function (customer) {
 
         DbConn.Wallet
             .create(
@@ -120,6 +120,73 @@ module.exports.CreateWallet = function (req, res) {
     });
 };
 
+module.exports.CreateWalletBulk = function (req, res) {
+
+    var jsonString = messageFormatter.FormatMessage(new Error('Not Implemented.'), "EXCEPTION", false, undefined);
+    logger.error('CreateWallet-DirectPayment - Fail To Create Wallet. - [%s] .', jsonString);
+    res.end(jsonString);
+
+  /*  var task = [];
+    if(req.body.Organisations){
+        req.body.Organisations.forEach(function (item) {
+            task.push(function createContact(callback) {
+                directPayment.CustomerRegister(item).then(function (customer) {
+                    var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, customer);
+                    callback(jsonString);
+                }, function (err) {
+                    var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+                    logger.error('CreateWallet-DirectPayment - Fail To Create Wallet. - [%s] .', jsonString);
+                    callback(jsonString);
+                });
+            });
+        });
+    }
+
+
+
+    async.parallel(task, function(err, results) {
+        if(err){
+
+        }
+        else{
+            if(results){
+                var items = [];
+                results.forEach(function(item){
+                    var obj = {
+                        Owner: req.user.iss,
+                        StripeId: item.id,
+                        Description: req.body.Description,
+                        Tag: req.body.Tag,
+                        CurrencyISO: req.body.CurrencyISO,
+                        Credit: 0,
+                        Status: true,
+                        TenantId: req.user.tenant,
+                        CompanyId: req.user.company
+                    };
+                    items.push(obj);
+                });
+                if(items.length>0){
+                    var jsonString;
+                    DbConn.Wallet.bulkCreate(
+                        results, {validate: false, individualHooks: true}
+                    ).then(function (results) {
+                            jsonString = messageFormatter.FormatMessage(undefined, "SUCCESS", true, results);
+                            logger.info('CreateWalletBulk - UploadContacts successfully.[%s] ', jsonString);
+                            res.end(jsonString);
+                        }).catch(function (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+                            logger.error('CreateWalletBulk - failed', err);
+                            res.end(jsonString);
+                        }).finally(function () {
+
+                        });
+                }
+            }
+        }
+    });
+*/
+};
+
 module.exports.UpdateWallet = function (req, res) {
 
     DbConn.Wallet
@@ -157,7 +224,7 @@ module.exports.UpdateWallet = function (req, res) {
 module.exports.BuyCredit = function (req, res) {
     var walletId = req.params.WalletId;
     if (walletId) {
-        lock(walletId, function (done) {
+        lock(walletId,ttl, function (done) {
             console.log("Lock acquired" + walletId);
             // No one else will be able to get a lock on 'myLock' until you call done()  done();
 
@@ -178,7 +245,7 @@ module.exports.BuyCredit = function (req, res) {
                                 where: [{WalletId: wallet.WalletId}]
                             }
                         ).then(function (cmp) {
-                                var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
+                                var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", cmp[0]===1, cmp[0]===1?credit:0);
                                 logger.info('BuyCredit - Update Wallet - [%s] .', jsonString);
                                 done();
                                 res.end(jsonString);
@@ -232,7 +299,7 @@ module.exports.BuyCredit = function (req, res) {
 
 module.exports.BuyCreditFormSelectedCard = function (req, res) {
     if (req.params.WalletId) {
-        lock(req.params.WalletId, function (done) {
+        lock(req.params.WalletId,ttl, function (done) {
             console.log("Lock acquired" + req.params.WalletId);
             // No one else will be able to get a lock on 'myLock' until you call done()  done();
 
@@ -311,7 +378,7 @@ module.exports.BuyCreditFormSelectedCard = function (req, res) {
 
 module.exports.DeductCredit = function (req, res) {
 
-    lock(req.params.WalletId, function (done) {
+    lock(req.params.WalletId,ttl, function (done) {
         console.log("Lock acquired" + req.params.WalletId);
         // No one else will be able to get a lock on 'myLock' until you call done()  done();
         DbConn.Wallet.find({
@@ -331,19 +398,19 @@ module.exports.DeductCredit = function (req, res) {
                             where: [{WalletId: wallet.WalletId}]
                         }
                     ).then(function (cmp) {
-                            var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
+                            var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, credit);
                             logger.info('DeductCredit - Update Wallet - [%s] .', jsonString);
                             done();
                             res.end(jsonString);
                             var data = {
                                 StripeId: undefined,
-                                Description: undefined,
+                                Description: req.body.Reason,
                                 CurrencyISO: undefined,
                                 Credit: credit,
                                 Tag: undefined,
                                 TenantId: req.user.tenant,
                                 CompanyId: req.user.company,
-                                OtherJsonData: {"msg": "DeductCredit", "amount": amount,"invokeBy": req.user.iss},
+                                OtherJsonData: { "msg": "DeductCredit", "amount": amount,"invokeBy": req.user.iss},
                                 WalletId: cmp.WalletId
                             };
                             addHistory(data);
@@ -383,7 +450,7 @@ module.exports.DeductCreditFormCustomer = function (req, res) {
         where: [{TenantId: req.user.tenant}, {CompanyId: req.user.company}, {Status: true}]
     }).then(function (wallet) {
         if (wallet) {
-            lock(wallet.WalletId, function (done) {
+            lock(wallet.WalletId,ttl, function (done) {
                 console.log("Lock acquired" + req.params.WalletId);
                 // No one else will be able to get a lock on 'myLock' until you call done()  done();
                 var amount = parseFloat(req.body.Amount);
@@ -405,7 +472,7 @@ module.exports.DeductCreditFormCustomer = function (req, res) {
                             res.end(jsonString);
                             var data = {
                                 StripeId: undefined,
-                                Description: undefined,
+                                Description: req.body.Reason,
                                 CurrencyISO: undefined,
                                 Credit: credit,
                                 Tag: undefined,
@@ -542,7 +609,11 @@ module.exports.CreditBalanceById = function (req, res) {
     }).then(function (wallet) {
         var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, 0);
         if (wallet) {
-            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, wallet.Credit);
+            var data = {
+                "WalletId":wallet.WalletId,
+                "Credit":wallet.Credit
+            };
+            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true,data );
         }
         else {
             jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
