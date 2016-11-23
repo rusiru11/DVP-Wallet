@@ -10,11 +10,40 @@ module.exports = {
     "Host":
     {
         "domain": "HOST_NAME",
-        "port": "HOST_VOXBONE_PORT",
+        "port": "HOST_WALLETSERVICE_PORT",
         "version": "HOST_VERSION",
         "hostpath":"HOST_PATH",
         "logfilepath": "LOG4JS_CONFIG"
     },
+	
+	
+    "Redis":
+    {
+        "ip": "SYS_REDIS_HOST",
+        "port": "SYS_REDIS_PORT",
+        "user": "SYS_REDIS_USER",
+        "password": "SYS_REDIS_PASSWORD"
+
+    },
+	
+	    "Security":
+    {
+        "ip": "SYS_REDIS_HOST",
+        "port": "SYS_REDIS_PORT",
+        "user": "SYS_REDIS_USER",
+        "password": "SYS_REDIS_PASSWORD",
+		"key":"SYS_REDIS_KEY"
+
+    },
+
+   "RabbitMQ":
+    {
+        "ip": "SYS_RABBITMQ_HOST",
+        "port": "SYS_RABBITMQ_PORT",
+        "user": "SYS_RABBITMQ_USER",
+        "password": "SYS_RABBITMQ_PASSWORD"
+    },
+	
     "Services": {
 
         "limitServiceHost": "SYS_LIMITSERVICE_HOST",
@@ -27,4 +56,6 @@ module.exports = {
     }
 
 };
+
+
 
