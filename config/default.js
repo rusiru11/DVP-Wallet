@@ -12,6 +12,7 @@ module.exports = {
         "port": 6389,
         "password":"DuoS123",
         "redisdb":0,
+        "ttl":30000
     },
 
     "Host": {
@@ -24,7 +25,8 @@ module.exports = {
     "Security": {
         "ip" : "45.55.142.207",
         "port": 6389,
-        "password":"DuoS123"
+        "password":"DuoS123",
+		"key":""
     },
     "RabbitMQ":
     {

@@ -69,6 +69,23 @@ RestServer.post('/DVP/API/' + version + '/PaymentManager/Wallet', authorization(
     return next();
 });
 
+
+RestServer.post('/DVP/API/' + version + '/PaymentManager/Wallet/Bulk', authorization({
+    resource: "ardsresource",
+    action: "read"
+}), function (req, res, next) {
+    try {
+        logger.info('[CreateWalletBulk] - [HTTP]  - Request received -  Data - %s ', JSON.stringify(req.body));
+        walletHandler.CreateWalletBulk(req, res);
+    }
+    catch (ex) {
+        logger.error('[CreateWalletBulk] - [HTTP]  - Exception occurred -  Data - %s ', JSON.stringify(req.body), ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        res.end(jsonString);
+    }
+    return next();
+});
+
 RestServer.put('/DVP/API/' + version + '/PaymentManager/Wallet/:WalletId', authorization({
     resource: "ardsresource",
     action: "read"
