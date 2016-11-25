@@ -1070,20 +1070,50 @@ var addHistory = function (data) {
 
 module.exports.getWalletHistory = function (req, res) {
 
-    DbConn.WalletHistory.find({}).then(function (wallet) {
-        var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, 0);
-        if (wallet) {
+    DbConn.Wallet.find({
+        where: [{Owner: req.user.iss}, {TenantId: req.user.tenant}, {CompanyId: req.user.company}, {Status: true}]
+    }).then(function (walletData) {
+        var jsonString ;
+        if (walletData) {
 
-            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, wallet);
+            DbConn.WalletHistory.findAll({
+                where:[{createdAt:
+                {
+                    $gte:req.params.StartDate,
+                    $lte:req.params.EndDate
+                }},{TenantId: req.user.tenant}, {CompanyId: req.user.company},{WalletId:walletData.WalletId}]
+            }).then(function (walletHistory) {
+                var jsonString;
+                if (walletHistory) {
+
+                    jsonString = messageFormatter.FormatMessage(undefined, "SUCCESS", true, walletHistory);
+                    res.end(jsonString);
+                }
+                else {
+                    jsonString = messageFormatter.FormatMessage(undefined, "NO HISTORY RECORD FOUND", false, 0);
+                    res.end(jsonString);
+                }
+
+            }).error(function (err) {
+                var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
+                logger.error('[wallet history ] - [%s] ', jsonString);
+                res.end(jsonString);
+            });
+
         }
-        else {
-            jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", false, 0);
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(undefined, "NO WALLET RECORD FOUND", false, 0);
+            res.end(jsonString);
         }
-        logger.info('wallet history -  Wallet - [%s] .', jsonString);
-        res.end(jsonString);
+
+
     }).error(function (err) {
         var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
-        logger.error('[wallet history ] - [%s] ', jsonString);
+        logger.error('[Search wallet data ] - [%s] ', jsonString);
         res.end(jsonString);
     });
+
+
+
 };
