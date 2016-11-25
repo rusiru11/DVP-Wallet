@@ -840,6 +840,10 @@ var addHistory = function (data) {
 
 module.exports.getWalletHistory = function (req, res) {
 
+    var pageNo=req.params.pageNo;
+    var rowCount=req.params.rowCount;
+
+
     DbConn.Wallet.find({
         where: [{Owner: req.user.iss}, {TenantId: req.user.tenant}, {CompanyId: req.user.company}, {Status: true}]
     }).then(function (walletData) {
@@ -847,11 +851,11 @@ module.exports.getWalletHistory = function (req, res) {
         if (walletData) {
 
             DbConn.WalletHistory.findAll({
-                where:[{createdAt:
-                {
-                    $gte:req.params.StartDate,
-                    $lte:req.params.EndDate
-                }},{TenantId: req.user.tenant}, {CompanyId: req.user.company},{WalletId:walletData.WalletId}]
+                where:[{TenantId: req.user.tenant}, {CompanyId: req.user.company},{WalletId:walletData.WalletId}],
+                order:[['createdAt','DESC']],
+                offset:((pageNo - 1) * rowCount),
+                limit: rowCount
+
             }).then(function (walletHistory) {
                 var jsonString;
                 if (walletHistory) {

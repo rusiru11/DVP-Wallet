@@ -264,7 +264,7 @@ RestServer.put('/DVP/API/' + version + '/PaymentManager/Wallet/:WalletId/Card/:C
 
 // ------------------------------------ Wallet history--- --------------------------------//
 
-RestServer.get('/DVP/API/' + version + '/PaymentManager/WalletHistory/from/:StartDate/to/:EndDate', authorization({
+RestServer.get('/DVP/API/' + version + '/PaymentManager/WalletHistory/:rowCount/:pageNo', authorization({
     resource: "ardsresource",
     action: "read"
 }), function (req, res, next) {
