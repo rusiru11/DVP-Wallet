@@ -68,8 +68,11 @@ var buyCredit = function (walletId, amount, user) {
                                     Tag: undefined,
                                     TenantId: user.tenant,
                                     CompanyId: user.company,
-                                    OtherJsonData: {"msg": "BuyCredit", "invokeBy": user.iss},
-                                    WalletId: cmp.WalletId
+                                    OtherJsonData: {"amount":amount,"Balance":credit, "msg": "BuyCredit", "invokeBy": user.iss},
+                                    WalletId: cmp.WalletId,
+                                    Operation :  'BuyCredit',
+                                    InvokeBy :  req.user.iss,
+                                    Reason: "Buy Credit using Credit Card"
                                 };
                                 addHistory(data);
                             }).error(function (err) {
@@ -98,7 +101,6 @@ var buyCredit = function (walletId, amount, user) {
     }
     return deferred.promise;
 };
-
 
 var deductCredit = function (req, wallet, credit, amount) {
 
@@ -134,11 +136,14 @@ var deductCredit = function (req, wallet, credit, amount) {
                             CompanyId: req.user.company,
                             OtherJsonData: {
                                 "msg": "DeductCredit",
-                                "amount": amount,
+                                "amount": amount,"Balance":credit,
                                 "invokeBy": req.user.iss,
                                 "OtherJsonData": req.body.OtherJsonData
                             },
-                            WalletId: cmp.WalletId
+                            WalletId: cmp.WalletId,
+                            Operation :  'DeductCredit',
+                            InvokeBy :  req.user.iss,
+                            Reason: req.body.Reason? req.body.Reason:"Buy Credit using Credit Card"
                         };
                         addHistory(data);
                     }).error(function (error) {
@@ -189,7 +194,10 @@ module.exports.CreatePackage = function (req, res) {
                     TenantId: req.user.tenant,
                     CompanyId: req.user.company,
                     OtherJsonData: {"msg": "Create New Wallet", "invokeBy": req.user.iss},
-                    WalletId: cmp.WalletId
+                    WalletId: cmp.WalletId,
+                    Operation :  'CreatePackage',
+                    InvokeBy :  req.user.iss,
+                    Reason: "Create Package"
                 };
                 addHistory(data);
             }).error(function (err) {
@@ -239,7 +247,10 @@ module.exports.CreateWallet = function (req, res) {
                     TenantId: req.user.tenant,
                     CompanyId: req.user.company,
                     OtherJsonData: {"msg": "Create New Wallet", "invokeBy": req.user.iss},
-                    WalletId: cmp.WalletId
+                    WalletId: cmp.WalletId,
+                    Operation :  'CreateWallet',
+                    InvokeBy :  req.user.iss,
+                    Reason: "Create Wallet"
                 };
                 addHistory(data);
             }).error(function (err) {
@@ -346,8 +357,11 @@ module.exports.UpdateWallet = function (req, res) {
                 Tag: req.body.Tag,
                 TenantId: req.user.tenant,
                 CompanyId: req.user.company,
-                OtherJsonData: {"msg": "UpdateWallet", "invokeBy": req.user.iss},
-                WalletId: cmp.WalletId
+                OtherJsonData: {"Data": req.body, "invokeBy": req.user.iss},
+                WalletId: cmp.WalletId,
+                Operation :  'UpdateWallet',
+                InvokeBy :  req.user.iss,
+                Reason: "Apply Configurations"
             };
             addHistory(data);
         }).error(function (err) {
@@ -1055,7 +1069,10 @@ var addHistory = function (data) {
             TenantId: data.TenantId,
             CompanyId: data.CompanyId,
             OtherJsonData: data.OtherJsonData,
-            WalletId: data.WalletId
+            WalletId: data.WalletId,
+            Operation :  data.Operation,
+            InvokeBy :  data.InvokeBy,
+            Reason: data.Reason
         }
     ).then(function (cmp) {
             var jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, cmp);
