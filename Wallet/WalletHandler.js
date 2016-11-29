@@ -71,7 +71,7 @@ var buyCredit = function (walletId, amount, user) {
                                     OtherJsonData: {"amount":amount,"Balance":credit, "msg": "BuyCredit", "invokeBy": user.iss},
                                     WalletId: cmp.WalletId,
                                     Operation :  'BuyCredit',
-                                    InvokeBy :  req.user.iss,
+                                    InvokeBy :  user.iss,
                                     Reason: "Buy Credit using Credit Card"
                                 };
                                 addHistory(data);
