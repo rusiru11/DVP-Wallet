@@ -26,13 +26,13 @@ var http_server = restify.createServer({
     version: '1.0.0'
 });
 
-var https_options = {
+/*var https_options = {
     ca: fs.readFileSync('/etc/ssl/fb/COMODORSADomainValidationSecureServerCA.crt'),
     key: fs.readFileSync('/etc/ssl/fb/SSL1.txt'),
     certificate: fs.readFileSync('/etc/ssl/fb/STAR_duoworld_com.crt')
 };
 
-var https_server = restify.createServer(https_options);
+var https_server = restify.createServer(https_options);*/
 
 
 // Put any routing, response, etc. logic here. This allows us to define these functions
@@ -314,7 +314,7 @@ http_server.listen(port, function () {
     console.log('%s listening at %s', http_server.name, http_server.url);
 });
 
-
+/*setup_server(https_server);
 https_server.listen(444, function () {
     console.log('%s listening at %s', https_server.name, https_server.url);
-});
+});*/
