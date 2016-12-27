@@ -1091,14 +1091,14 @@ module.exports.getWalletHistory = function (req, res) {
     var rowCount=req.params.rowCount;
 
 
-    DbConn.Wallet.find({
+    /*DbConn.Wallet.find({
         where: [{Owner: req.user.iss}, {TenantId: req.user.tenant}, {CompanyId: req.user.company}, {Status: true}]
     }).then(function (walletData) {
         var jsonString ;
-        if (walletData) {
+        if (walletData) {*/
 
             DbConn.WalletHistory.findAll({
-                where:[{TenantId: req.user.tenant}, {CompanyId: req.user.company},{WalletId:walletData.WalletId}],
+                where:[{TenantId: req.user.tenant}, {CompanyId: req.user.company}],
                 order:[['createdAt','DESC']],
                 offset:((pageNo - 1) * rowCount),
                 limit: rowCount
@@ -1121,7 +1121,7 @@ module.exports.getWalletHistory = function (req, res) {
                 res.end(jsonString);
             });
 
-        }
+        /*}
         else
         {
             jsonString = messageFormatter.FormatMessage(undefined, "NO WALLET RECORD FOUND", false, 0);
@@ -1133,7 +1133,7 @@ module.exports.getWalletHistory = function (req, res) {
         var jsonString = messageFormatter.FormatMessage(err, "EXCEPTION", false, undefined);
         logger.error('[Search wallet data ] - [%s] ', jsonString);
         res.end(jsonString);
-    });
+    });*/
 
 
 
